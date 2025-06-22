@@ -25,7 +25,7 @@ def main():
     else:
         # Always prompt user for address
         print("📍 Please enter a Sui wallet address to analyze:")
-        print("   (Example: 0x42c7235d44467c971772636f4426970ad1475de79ee3cd6ebd63c65eca5ebd48)")
+        print("   (Example: 0x1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890)")
         
         try:
             address = input("🔗 Wallet Address: ").strip()
