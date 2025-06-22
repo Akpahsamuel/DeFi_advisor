@@ -305,28 +305,5 @@ class SuiDeFiAdvisor:
         
         return report
 
-def main():
-    """Demo the DeFi advisor"""
-    advisor = SuiDeFiAdvisor()
-    
-    # Example address from the documentation
-    test_address = "0x42c7235d44467c971772636f4426970ad1475de79ee3cd6ebd63c65eca5ebd48"
-    
-    print("🚀 Starting Sui DeFi Advisor Demo")
-    print("="*50)
-    
-    # Generate comprehensive report
-    report = advisor.generate_report(test_address)
-    print(report)
-    
-    # Show individual analyses
-    print("\n📊 Detailed Portfolio Analysis:")
-    portfolio_analysis = advisor.analyze_portfolio(test_address)
-    print(json.dumps(portfolio_analysis, indent=2, default=str))
-    
-    print("\n💰 Staking Opportunities:")
-    staking_analysis = advisor.get_staking_opportunities()
-    print(json.dumps(staking_analysis, indent=2, default=str))
-
-if __name__ == "__main__":
-    main() 
+# End of SuiDeFiAdvisor class
+# Use main.py to run the advisor 
