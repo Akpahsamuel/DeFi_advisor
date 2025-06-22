@@ -4,6 +4,7 @@ Main entry point for the Sui DeFi Advisor
 """
 
 from defi_advisor import SuiDeFiAdvisor
+from defi_platforms import SuiDeFiPlatforms
 import sys
 
 def main():
@@ -11,11 +12,12 @@ def main():
     print("🚀 Welcome to Sui DeFi Advisor!")
     print("="*50)
     
-    # Initialize the advisor
+    # Initialize both the advisor and platforms detector
     advisor = SuiDeFiAdvisor()
+    platforms_detector = SuiDeFiPlatforms()
     
-    if not advisor.client:
-        print("❌ Failed to initialize advisor. Please check your connection.")
+    if not advisor.client or not platforms_detector.client:
+        print("❌ Failed to initialize. Please check your connection.")
         return
     
     # Get address from command line or prompt user
@@ -30,86 +32,102 @@ def main():
         try:
             address = input("🔗 Wallet Address: ").strip()
             
-            # Validate address format
             if not address:
                 print("❌ No address provided. Exiting.")
                 return
             
-            if not address.startswith('0x'):
-                print("❌ Invalid address format. Address should start with '0x'")
-                return
-            
-            if len(address) != 66:  # 0x + 64 hex characters
-                print("❌ Invalid address length. Sui addresses should be 66 characters long (0x + 64 hex)")
-                return
+            # Basic validation
+            if not address.startswith('0x') or len(address) != 66:
+                print("⚠️  Warning: Address format may be incorrect")
+                print("   Expected: 0x followed by 64 hex characters")
                 
-            print(f"✅ Using address: {address}")
-            
+                confirm = input("Continue anyway? (y/N): ").strip().lower()
+                if confirm != 'y':
+                    print("👋 Goodbye!")
+                    return
+        
         except KeyboardInterrupt:
-            print("\n\n👋 Thanks for using Sui DeFi Advisor!")
+            print("\n👋 Goodbye!")
             return
         except Exception as e:
             print(f"❌ Error getting address: {e}")
             return
     
-    print("\n🔍 Analyzing wallet...")
-    
-    # Generate comprehensive report
-    report = advisor.generate_report(address)
-    print(report)
-    
-    # Offer detailed analysis
-    print("\n" + "="*50)
-    print("📊 Would you like detailed analysis? (y/n): ", end="")
+    print(f"\n🎯 Analyzing wallet: {address}")
+    print("="*50)
     
     try:
-        choice = input().lower().strip()
-        if choice in ['y', 'yes']:
-            print("\n📊 Detailed Portfolio Analysis:")
-            portfolio_analysis = advisor.analyze_portfolio(address)
+        # Ask user what type of analysis they want
+        print("\n📊 Choose analysis type:")
+        print("1. 📈 Portfolio Analysis (Default)")
+        print("2. 🏗️  DeFi Platforms Detection") 
+        print("3. 🔍 Complete Analysis (Both)")
+        
+        try:
+            choice = input("\nEnter choice (1-3) or press Enter for default: ").strip()
+            if not choice:
+                choice = "1"
+        except KeyboardInterrupt:
+            print("\n👋 Goodbye!")
+            return
+        
+        if choice == "1":
+            # Portfolio analysis only
+            print("\n" + "="*50)
+            report = advisor.generate_report(address)
+            print(report)
             
-            if "error" not in portfolio_analysis:
-                summary = portfolio_analysis.get("portfolio_summary", {})
-                print(f"• Risk Level: {summary.get('risk_level', 'Unknown')}")
-                print(f"• Total Assets: {summary.get('total_coin_types', 0)} coin types")
-                print(f"• Objects Owned: {summary.get('objects_owned', 0)}")
-                
-                special_objects = summary.get('special_objects', [])
-                if special_objects:
-                    print(f"• Special Objects: {', '.join(special_objects)}")
-                
-                print(f"\n💡 Key Insights:")
-                for insight in portfolio_analysis.get("insights", []):
-                    print(f"  {insight}")
-                
-                print(f"\n🎯 Recommendations:")
-                for rec in portfolio_analysis.get("recommendations", []):
-                    print(f"  {rec}")
-            else:
-                print(f"❌ {portfolio_analysis['error']}")
+        elif choice == "2":
+            # DeFi platforms detection only
+            print("\n" + "="*50)
+            platforms_report = platforms_detector.generate_platforms_report(address)
+            print(platforms_report)
             
-            print("\n💰 Staking Analysis:")
-            staking_analysis = advisor.get_staking_opportunities()
+        elif choice == "3":
+            # Complete analysis
+            print("\n" + "="*50)
+            print("📈 PORTFOLIO ANALYSIS:")
+            print("="*50)
+            report = advisor.generate_report(address)
+            print(report)
             
-            if "error" not in staking_analysis:
-                gas_info = staking_analysis.get("gas_cost_analysis", {})
-                if gas_info:
-                    print(f"⛽ Current Gas: {gas_info.get('current_gas_price', 'Unknown')}")
-                    print(f"  {gas_info.get('recommendation', '')}")
+            print("\n" + "="*50)
+            print("🏗️ DEFI PLATFORMS ANALYSIS:")
+            print("="*50)
+            platforms_report = platforms_detector.generate_platforms_report(address)
+            print(platforms_report)
+            
+        else:
+            print("❌ Invalid choice. Running default portfolio analysis.")
+            report = advisor.generate_report(address)
+            print(report)
+        
+        # Ask if user wants detailed analysis
+        try:
+            detailed = input("\n🔬 Want detailed JSON analysis? (y/N): ").strip().lower()
+            if detailed == 'y':
+                print("\n" + "="*50)
+                print("📊 DETAILED PORTFOLIO DATA:")
+                print("="*50)
+                portfolio_analysis = advisor.analyze_portfolio(address)
+                import json
+                print(json.dumps(portfolio_analysis, indent=2, default=str))
                 
-                print(f"\n💡 Staking Recommendations:")
-                for rec in staking_analysis.get("recommendations", []):
-                    print(f"  {rec}")
-            else:
-                print(f"❌ {staking_analysis['error']}")
-    
+                if choice in ["2", "3"]:
+                    print("\n" + "="*50)
+                    print("🏗️ DETAILED PLATFORMS DATA:")
+                    print("="*50)
+                    platforms_data = platforms_detector.detect_platform_interactions(address)
+                    print(json.dumps(platforms_data, indent=2, default=str))
+                
+        except KeyboardInterrupt:
+            print("\n👋 Analysis complete!")
+            
     except KeyboardInterrupt:
-        print("\n\n👋 Thanks for using Sui DeFi Advisor!")
+        print("\n👋 Goodbye!")
     except Exception as e:
-        print(f"\n❌ Error: {e}")
-    
-    print("\n" + "="*50)
-    print("🤖 Analysis complete! Thank you for using Sui DeFi Advisor.")
+        print(f"❌ An error occurred: {e}")
+        print("Please try again or check your internet connection.")
 
 if __name__ == "__main__":
     main() 
